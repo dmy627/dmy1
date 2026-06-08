@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Play, CheckCircle, XCircle, ChevronLeft } from 'lucide-react';
+import { loadPyodide, type PyodideInterface } from 'pyodide';
 
 const Practice: React.FC = () => {
   const { courseId, exerciseId } = useParams<{ courseId: string; exerciseId: string }>();
@@ -15,6 +16,8 @@ const Practice: React.FC = () => {
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [pyodide, setPyodide] = useState<PyodideInterface | null>(null);
+  const [pyodideLoading, setPyodideLoading] = useState(false);
 
   // 练习数据
   const exercise = {
@@ -30,7 +33,7 @@ const Practice: React.FC = () => {
 
 # 你的代码：
 `,
-    testCases: [`print("Hello, Data Analysis!")`],
+    expectedOutput: 'Hello, Data Analysis!',
     solution: `# 正确的代码
 print("Hello, Data Analysis!")`,
   };
@@ -41,20 +44,82 @@ print("Hello, Data Analysis!")`,
     title: 'Python数据分析入门',
   };
 
+  // 初始化Pyodide
+  useEffect(() => {
+    let isMounted = true;
+    
+    const initPyodide = async () => {
+      if (pyodide || pyodideLoading) return;
+      
+      setPyodideLoading(true);
+      try {
+        const py = await loadPyodide({
+          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
+        });
+        if (isMounted) {
+          setPyodide(py);
+        }
+      } catch (error) {
+        console.error('Pyodide加载失败:', error);
+        if (isMounted) {
+          setOutput('Python环境加载失败，请刷新页面重试');
+        }
+      } finally {
+        if (isMounted) {
+          setPyodideLoading(false);
+        }
+      }
+    };
+    
+    initPyodide();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [pyodide, pyodideLoading]);
+
   // 处理代码运行
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
+    if (!pyodide) {
+      setOutput('Python环境正在加载中，请稍候...');
+      return;
+    }
+    
     setIsRunning(true);
     setOutput('运行中...');
+    setIsCorrect(null);
     
-    // 模拟代码运行
-    setTimeout(() => {
-      const expectedOutput = 'Hello, Data Analysis!';
-      const userOutput = code.includes('print("Hello, Data Analysis!")') ? expectedOutput : '输出不匹配';
+    try {
+      // 清空之前的输出
+      let userOutput = '';
       
-      setOutput(userOutput);
-      setIsCorrect(userOutput === expectedOutput);
+      // 重定向print输出
+      pyodide.globals.set('print', (text: any) => {
+        userOutput += String(text) + '\n';
+        setOutput(userOutput);
+      });
+      
+      // 运行用户代码
+      const result = pyodide.runPython(code);
+      
+      // 如果有表达式结果但没有print输出，也显示出来
+      if (userOutput === '' && result !== undefined && result !== null) {
+        userOutput = String(result);
+        setOutput(userOutput);
+      }
+      
+      // 验证结果
+      const trimmedOutput = userOutput.trim();
+      const expectedOutput = exercise.expectedOutput.trim();
+      setIsCorrect(trimmedOutput === expectedOutput);
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setOutput(`错误: ${errorMessage}`);
+      setIsCorrect(false);
+    } finally {
       setIsRunning(false);
-    }, 1000);
+    }
   };
 
   // 重置代码
@@ -129,11 +194,11 @@ print("Hello, Data Analysis!")`,
             <div className="p-4 border-t flex justify-end space-x-3">
               <button
                 onClick={handleRunCode}
-                disabled={isRunning}
-                className={`flex items-center px-4 py-2 rounded-lg transition ${isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                disabled={isRunning || !pyodide}
+                className={`flex items-center px-4 py-2 rounded-lg transition ${(isRunning || !pyodide) ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
               >
                 <Play size={16} className="mr-2" />
-                {isRunning ? '运行中...' : '运行代码'}
+                {!pyodide ? '加载Python环境...' : isRunning ? '运行中...' : '运行代码'}
               </button>
             </div>
           </div>
