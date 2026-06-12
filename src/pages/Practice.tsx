@@ -506,9 +506,27 @@ function execute(code) {
 
   function runLines(codeLines) {
     for (let i = 0; i < codeLines.length; i++) {
-      const line = codeLines[i].trim();
+      let line = codeLines[i].trim();
       if (!line || line.startsWith('#')) continue;
       if (line.startsWith('import ') || line.startsWith('from ')) continue;
+
+      // 处理多行赋值（字典、列表等）
+      if (line.includes('=') && (line.endsWith('{') || line.endsWith('['))) {
+        let fullLine = line;
+        let depth = line.endsWith('{') ? 1 : 1;
+        let j = i + 1;
+        while (j < codeLines.length && depth > 0) {
+          const nextLine = codeLines[j];
+          fullLine += '\n' + nextLine;
+          for (const ch of nextLine) {
+            if (ch === '{' || ch === '[') depth++;
+            if (ch === '}' || ch === ']') depth--;
+          }
+          j++;
+        }
+        line = fullLine.trim();
+        i = j - 1;
+      }
 
       // 赋值语句
       const assignMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
