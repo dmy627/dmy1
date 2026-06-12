@@ -681,15 +681,24 @@ function execute(code) {
   }
 
   function parsePrint(content) {
-    const parts = [], cur = '';
+    const parts = [];
+    let cur = '';
     let inStr = false, strChar = '', depth = 0;
     for (let i = 0; i < content.length; i++) {
       const ch = content[i];
-      if (!inStr && (ch === '"' || ch === "'")) { inStr = true; strChar = ch; }
-      else if (inStr && ch === strChar) { inStr = false; }
-      else if (!inStr && ch === '(') { depth++; }
-      else if (!inStr && ch === ')') { depth--; }
-      else if (!inStr && depth === 0 && ch === ',') { parts.push(cur.trim()); }
+      if (!inStr && (ch === '"' || ch === "'")) { 
+        inStr = true; strChar = ch; cur += ch;
+      } else if (inStr && ch === strChar) { 
+        inStr = false; cur += ch;
+      } else if (!inStr && ch === '(') { 
+        depth++; cur += ch;
+      } else if (!inStr && ch === ')') { 
+        depth--; cur += ch;
+      } else if (!inStr && depth === 0 && ch === ',') { 
+        parts.push(cur.trim()); cur = '';
+      } else {
+        cur += ch;
+      }
     }
     if (cur.trim()) parts.push(cur.trim());
     return parts;
