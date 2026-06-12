@@ -520,7 +520,8 @@ function execute(code) {
           try {
             const data = new Function('return ' + expr.slice(14,-1))();
             vars[name] = new pd.DataFrame(data);
-          } catch(e) { vars[name] = new pd.DataFrame({}); }
+            out += `${name} = DataFrame with shape ${vars[name].shape}\n`;
+          } catch(e) { vars[name] = new pd.DataFrame({}); out += `${name} = DataFrame (empty)\n`; }
           continue;
         }
 
@@ -534,9 +535,11 @@ function execute(code) {
               try {
                 const spec = new Function('return ' + rest.slice(5,-1))();
                 vars[name] = grouped.agg(spec);
-              } catch(e) { vars[name] = new pd.DataFrame({}); }
+                out += `${name} = GroupBy aggregated DataFrame\n`;
+              } catch(e) { vars[name] = new pd.DataFrame({}); out += `${name} = GroupBy (error)\n`; }
             } else {
               vars[name] = grouped;
+              out += `${name} = GroupBy object\n`;
             }
             continue;
           }
@@ -549,32 +552,33 @@ function execute(code) {
               const body = m[2].replace(/row\['?(\w+)'?\]/g, (mk, k) => `row['${k}']`);
               const fn = new Function('row', `return ${body}`);
               vars[name] = vars[m[1]].apply(fn);
-            } catch(e) { vars[name] = new pd.DataFrame({}); }
+              out += `${name} = Applied result\n`;
+            } catch(e) { vars[name] = new pd.DataFrame({}); out += `${name} = Apply (error)\n`; }
             continue;
           }
         }
 
         // drop_duplicates
         const dupM = expr.match(/(\w+)\.drop_duplicates\('([^']+)'(?:,\s*keep\s*=\s*'([^']+)')?\)/);
-        if (dupM) { vars[name] = vars[dupM[1]].drop_duplicates(dupM[2], dupM[3]); continue; }
+        if (dupM) { vars[name] = vars[dupM[1]].drop_duplicates(dupM[2], dupM[3]); out += `${name} = drop_duplicates result\n`; continue; }
 
         // dropna
         if (expr.match(/(\w+)\.dropna\(\)/)) {
           const m = expr.match(/(\w+)\.dropna\(\)/);
-          vars[name] = vars[m[1]].dropna(); continue;
+          vars[name] = vars[m[1]].dropna(); out += `${name} = dropna result\n`; continue;
         }
 
         // reset_index
         const riM = expr.match(/(\w+)\.reset_index\(drop\s*=\s*(\w+)\)/);
-        if (riM) { vars[name] = vars[riM[1]].reset_index(riM[2]==='True'); continue; }
+        if (riM) { vars[name] = vars[riM[1]].reset_index(riM[2]==='True'); out += `${name} = reset_index result\n`; continue; }
 
         // sort_values
         const svM = expr.match(/(\w+)\.sort_values\('([^']+)'(?:,\s*ascending\s*=\s*(\w+))?\)/);
-        if (svM) { vars[name] = vars[svM[1]].sort_values(svM[2], svM[3]!=='False'); continue; }
+        if (svM) { vars[name] = vars[svM[1]].sort_values(svM[2], svM[3]!=='False'); out += `${name} = sort_values result\n`; continue; }
 
         // round
         const rM = expr.match(/(\w+)\.round\((\d+)\)/);
-        if (rM) { vars[name] = vars[rM[1]].round(+rM[2]); continue; }
+        if (rM) { vars[name] = vars[rM[1]].round(+rM[2]); out += `${name} = round result\n`; continue; }
 
         // 简单方法
         const simpleMeths = [
@@ -592,14 +596,17 @@ function execute(code) {
           const m = expr.match(re);
           if (m && vars[m[1]]) { vars[name] = fn(vars[m[1]]); handled = true; break; }
         }
-        if (handled) continue;
+        if (handled) { out += `${name} = ${String(vars[name])}\n`; continue; }
 
         // 通用表达式求值
         try {
           const ev = new Function(...Object.keys(vars), `"use strict"; return (${evalExpr(expr, vars)})`);
           vars[name] = ev(...Object.values(vars));
+          if (vars[name] instanceof pd.DataFrame) out += `${name} =\n${vars[name].toString()}\n`;
+          else out += `${name} = ${String(vars[name])}\n`;
         } catch(e) {
-          try { vars[name] = eval(evalExpr(expr, vars)); } catch(e2) { vars[name] = expr; }
+          try { vars[name] = eval(evalExpr(expr, vars)); out += `${name} = ${String(vars[name])}\n`; } 
+          catch(e2) { vars[name] = expr; out += `${name} = ${expr}\n`; }
         }
         continue;
       }
