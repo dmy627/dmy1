@@ -427,59 +427,70 @@ function execute(code) {
     return { DataFrame: DF };
   })();
 
-  function evalExpr(expr, v) {
-    // df['col'] -> df._data[col]
-    let e = expr.replace(/(\w+)\['([^']+)'\]/g, (m, obj, key) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].get('${key}')`;
-      if (Array.isArray(v[obj])) return `v['${obj}'][${key}]`;
-      return m;
-    });
-    // .shape
-    e = e.replace(/(\w+)\.shape/g, (m, obj) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].shape`;
-      return m;
-    });
-    // .round(n)
-    e = e.replace(/(\w+)\.round\((\d+)\)/g, (m, obj, n) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].round(${n})`;
-      return m;
-    });
-    // .mean() .sum() .max() .min() .nunique()
-    ['mean','sum','max','min','nunique'].forEach(meth => {
-      e = e.replace(new RegExp(`(\\w+)\\.${meth}\\(\\)`, 'g'), (m, obj) => {
-        if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].${meth}()`;
-        return m;
-      });
-    });
-    // .head(n)
-    e = e.replace(/(\w+)\.head\((\d+)\)/g, (m, obj, n) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].head(${n})`;
-      return m;
-    });
-    // .describe()
-    e = e.replace(/(\w+)\.describe\(\)/g, (m, obj) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].describe()`;
-      return m;
-    });
-    // .value_counts()
-    e = e.replace(/(\w+)\.value_counts\(\)/g, (m, obj) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].value_counts()`;
-      return m;
-    });
-    // .sort_values
-    e = e.replace(/(\w+)\.sort_values\('([^']+)'(?:,\s*ascending\s*=\s*(\w+))?\)/g, (m, obj, col, asc) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].sort_values('${col}', ${asc!=='False'})`;
-      return m;
-    });
-    // .iloc[i]
-    e = e.replace(/(\w+)\.iloc\[(\d+)\]/g, (m, obj, i) => {
-      if (v[obj] instanceof pd.DataFrame) return `v['${obj}'].iloc(${i})`;
-      return m;
-    });
-    // 变量名直接替换
+  function evalExpr(expr: string, v: Record<string, any>): string {
+    let e = expr;
+    const dfVars: string[] = [];
     Object.keys(v).forEach(k => {
-      const re = new RegExp(`\\b${k}\\b`, 'g');
-      e = e.replace(re, `v['${k}']`);
+      if (k !== 'pd' && v[k] instanceof pd.DataFrame) dfVars.push(k);
+    });
+    dfVars.sort((a, b) => b.length - a.length);
+
+    dfVars.forEach(dfName => {
+      // 逐个替换，每个模式只匹配一次，避免 `df['x'].sum()` 之后又匹配 `df`
+      // df['col'].sum() -> v['df'].get('col').sum()
+      e = e.replace(new RegExp(`${dfName}\\['([^']+)'\\]\\.sum\\(\\)`, 'g'),
+        (m) => `v['${dfName}'].get('${m.match(/\[([^\]]+)\]/)?.[1] || ''}').sum()`);
+      // 先把所有 df['col'].method 形式的全部处理掉
+      const colMeth = /(\w+)\['([^']+)'\]\.(sum|mean|max|min|nunique|describe|value_counts)\(\)/g;
+      e = e.replace(colMeth, (_m, _obj, col, method) => {
+        const obj = _obj || _obj;
+        if (v[obj] instanceof pd.DataFrame) {
+          return `v['${obj}'].get('${col}').${method}()`;
+        }
+        return _m;
+      });
+
+      // df['col'].head(n)
+      e = e.replace(new RegExp(`${dfName}\\['([^']+)'\\]\\.head\\((\\d+)\\)`, 'g'),
+        (_m, col, n) => `v['${dfName}'].get('${col}').head(${n})`);
+      // df['col'].sort_values(...)
+      e = e.replace(new RegExp(`${dfName}\\['([^']+)'\\]\\.sort_values\\('([^']+)'(?:,\\s*ascending\\s*=\\s*(\\w+))?\\)`, 'g'),
+        (_m, col, col2, asc) => `v['${dfName}'].get('${col}').sort_values('${col}', ${asc !== 'False'})`);
+      // df['col'] -> v['df'].get('col')
+      e = e.replace(new RegExp(`${dfName}\\['([^']+)'\\]`, 'g'),
+        (_m, col) => `v['${dfName}'].get('${col}')`);
+      // df.shape
+      e = e.replace(new RegExp(`${dfName}\\.shape`, 'g'), `v['${dfName}'].shape`);
+      // df.iloc[i]
+      e = e.replace(new RegExp(`${dfName}\\.iloc\\[(\\d+)\\]`, 'g'),
+        (_m, i) => `v['${dfName}'].iloc(${i})`);
+      // df.head(n)
+      e = e.replace(new RegExp(`${dfName}\\.head\\((\\d+)\\)`, 'g'),
+        (_m, n) => `v['${dfName}'].head(${n})`);
+      // df.round(n)
+      e = e.replace(new RegExp(`${dfName}\\.round\\((\\d+)\\)`, 'g'),
+        (_m, n) => `v['${dfName}'].round(${n})`);
+      // df.drop_duplicates(col, keep='...')
+      e = e.replace(new RegExp(`${dfName}\\.drop_duplicates\\('([^']+)'(?:,\\s*keep\\s*=\\s*'([^']+)')?\\)`, 'g'),
+        (_m, col, keep) => `v['${dfName}'].drop_duplicates('${col}', '${keep || 'first'}')`);
+      // df.dropna()
+      e = e.replace(new RegExp(`${dfName}\\.dropna\\(\\)`, 'g'), `v['${dfName}'].dropna()`);
+      // df.reset_index(drop=...)
+      e = e.replace(new RegExp(`${dfName}\\.reset_index\\(drop\\s*=\\s*(\\w+)\\)`, 'g'),
+        (_m, drop) => `v['${dfName}'].reset_index(${drop === 'True'})`);
+      // df.sort_values(col, ascending=...)
+      e = e.replace(new RegExp(`${dfName}\\.sort_values\\('([^']+)'(?:,\\s*ascending\\s*=\\s*(\\w+))?\\)`, 'g'),
+        (_m, col, asc) => `v['${dfName}'].sort_values('${col}', ${asc !== 'False'})`);
+      // df.nunique/mean/sum/max/min/describe/head/value_counts
+      const plainMeths = ['nunique', 'mean', 'sum', 'max', 'min', 'describe', 'head', 'value_counts', 'unique', 'iterrows'];
+      plainMeths.forEach(m => {
+        e = e.replace(new RegExp(`${dfName}\\.${m}\\(\\)`, 'g'), `v['${dfName}'].${m}()`);
+      });
+      // df.drop_duplicates() 无参数 → 忽略
+      e = e.replace(new RegExp(`${dfName}\\.drop_duplicates\\(\\)`, 'g'), `v['${dfName}']`);
+      // df 作为整体变量（确保不被上面的模式匹配到的地方）
+      // 只替换不在引号/括号内的 df
+      e = e.replace(new RegExp(`(?<![\\w'\"])${dfName}(?![\\w'\"])`, 'g'), `v['${dfName}']`);
     });
     return e;
   }
