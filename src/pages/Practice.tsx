@@ -618,8 +618,8 @@ function execute(code) {
 
         // 通用表达式求值
         try {
-          const ev = new Function(...Object.keys(vars), `"use strict"; return (${evalExpr(expr, vars)})`);
-          vars[name] = ev(...Object.values(vars));
+          const ev = new Function('v', `"use strict"; return (${evalExpr(expr, vars)})`);
+          vars[name] = ev(vars);
           if (vars[name] instanceof pd.DataFrame) out += `${name} =\n${vars[name].toString()}\n`;
           else out += `${name} = ${String(vars[name])}\n`;
         } catch(e) {
@@ -637,8 +637,8 @@ function execute(code) {
           if ((p.startsWith('"') && p.endsWith('"')) || (p.startsWith("'") && p.endsWith("'")))
             return p.slice(1,-1);
           try {
-            const ev = new Function(...Object.keys(vars), `"use strict"; return (${evalExpr(p, vars)})`);
-            const r = ev(...Object.values(vars));
+            const ev = new Function('v', `"use strict"; return (${evalExpr(p, vars)})`);
+            const r = ev(vars);
             if (r instanceof pd.DataFrame) return r.toString();
             return String(r);
           } catch(e) {
