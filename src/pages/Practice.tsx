@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Play, CheckCircle, XCircle, ChevronLeft, Code, BookOpen, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Play, CheckCircle, XCircle, ChevronLeft, Code, BookOpen, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 
 // 10个项目的代码练习数据
 const practiceData = {
@@ -10,11 +10,9 @@ const practiceData = {
     title: '数据加载与探索',
     description: '学习如何使用pandas加载电商数据，进行初步的数据探索和分析。',
     difficulty: 'easy',
-    starterCode: `# 项目1：数据加载与探索
-import pandas as pd
-import numpy as np
+    starterCode: `import pandas as pd
 
-# 示例数据 - 电商订单数据
+# 电商订单数据
 data = {
     'order_id': [1, 2, 3, 4, 5],
     'user_id': [101, 102, 101, 103, 102],
@@ -23,62 +21,20 @@ data = {
     'date': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-03', '2024-01-04']
 }
 
-# TODO: 创建DataFrame并进行基础探索
+# 创建DataFrame并探索
 df = pd.DataFrame(data)
 print("数据形状:", df.shape)
-print("\\n前5行数据:")
+print("\n前5行数据:")
 print(df.head())
-
-print("\\n数据类型:")
-print(df.dtypes)
-
-print("\\n统计信息:")
+print("\n统计信息:")
 print(df.describe())
-
-print("\\n商品销量统计:")
+print("\n商品销量统计:")
 print(df['product'].value_counts())
-
-print("\\n总销售额:")
-total_sales = df['amount'].sum()
-print(f"总销售额: {total_sales}元")
-`,
-    expectedOutput: '总销售额: 92元',
-    solution: `# 项目1：数据加载与探索 - 完整答案
-import pandas as pd
-import numpy as np
-
-# 示例数据 - 电商订单数据
-data = {
-    'order_id': [1, 2, 3, 4, 5],
-    'user_id': [101, 102, 101, 103, 102],
-    'product': ['牛奶', '面包', '鸡蛋', '牛奶', '面包'],
-    'amount': [25, 15, 12, 25, 15],
-    'date': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-03', '2024-01-04']
-}
-
-df = pd.DataFrame(data)
-print("数据形状:", df.shape)
-print("\\n前5行数据:")
-print(df.head())
-print("\\n数据类型:")
-print(df.dtypes)
-print("\\n统计信息:")
-print(df.describe())
-print("\\n商品销量统计:")
-print(df['product'].value_counts())
-print("\\n总销售额:")
-total_sales = df['amount'].sum()
-print(f"总销售额: {total_sales}元")
-
-print("\\n每个商品的销售额:")
-product_sales = df.groupby('product')['amount'].sum()
-print(product_sales)
-
-print("\\n每个用户的购买次数:")
-user_purchases = df.groupby('user_id').size()
-print(user_purchases)
-`,
-    hint: '使用pd.DataFrame创建数据框，用head()查看数据，用describe()获取统计信息，用groupby进行聚合分析。'
+print("\n总销售额:")
+print(f"总销售额: {df['amount'].sum()}元")`,
+    expectedOutput: '总销售额: 77元',
+    hint: '使用 pd.DataFrame 创建数据框，用 head() 查看数据，用 describe() 获取统计信息。',
+    packages: ['pandas'],
   },
   '2': {
     id: '2',
@@ -86,93 +42,37 @@ print(user_purchases)
     title: '数据预处理',
     description: '学习如何清洗和预处理电商数据，为关联规则挖掘做准备。',
     difficulty: 'medium',
-    starterCode: `# 数据预处理
-import pandas as pd
+    starterCode: `import pandas as pd
 
 # 购物车数据
 data = {
     'order_id': [1, 1, 1, 2, 2, 3, 3, 3, 4],
     'product': ['牛奶', '面包', '鸡蛋', '面包', '黄油', '牛奶', '面包', '黄油', '牛奶']
 }
-
 df = pd.DataFrame(data)
-
-# TODO: 将数据转换为购物篮格式
 print("原始数据:")
 print(df)
 
 # 按订单ID分组，收集每个订单的商品
 baskets = df.groupby('order_id')['product'].apply(list)
-print("\\n购物篮数据:")
+print("\n购物篮数据:")
 print(baskets)
+print("\n购物篮数量:", len(baskets))
 
-print("\\n购物篮数量:", len(baskets))
-`,
+# 看看有哪些商品
+print("\n所有商品:")
+print(sorted(df['product'].unique()))`,
     expectedOutput: '购物篮数量: 4',
-    solution: `# 数据预处理 - 完整答案
-import pandas as pd
-from collections import defaultdict
-
-data = {
-    'order_id': [1, 1, 1, 2, 2, 3, 3, 3, 4],
-    'product': ['牛奶', '面包', '鸡蛋', '面包', '黄油', '牛奶', '面包', '黄油', '牛奶']
-}
-
-df = pd.DataFrame(data)
-print("原始数据:")
-print(df)
-
-baskets = df.groupby('order_id')['product'].apply(list)
-print("\\n购物篮数据:")
-print(baskets)
-print("\\n购物篮数量:", len(baskets))
-
-print("\\n所有商品列表:")
-all_products = sorted(df['product'].unique())
-print(all_products)
-
-print("\\n商品出现频率:")
-product_count = df['product'].value_counts()
-print(product_count)
-`,
-    hint: '使用groupby按订单ID分组，用apply(list)将商品收集为列表。'
+    hint: '使用 groupby + apply(list) 将同一个订单的商品合并。',
+    packages: ['pandas'],
   },
   '3': {
     id: '3',
     projectId: '1',
     title: '关联规则挖掘',
-    description: '实现基础的关联规则挖掘，计算支持度、置信度和提升度。',
+    description: '实现基础的关联规则挖掘，计算支持度、置信度。',
     difficulty: 'medium',
-    starterCode: `# 关联规则挖掘
-from collections import defaultdict, Counter
-
-# 购物篮数据
-baskets = [
-    ['牛奶', '面包', '鸡蛋'],
-    ['面包', '黄油'],
-    ['牛奶', '面包', '黄油'],
-    ['牛奶']
-]
-
-# TODO: 计算单个商品的支持度
-print("计算商品支持度...")
-total_baskets = len(baskets)
-product_count = Counter()
-
-for basket in baskets:
-    for product in basket:
-        product_count[product] += 1
-
-print("\\n商品出现次数:")
-for product, count in product_count.items():
-    support = count / total_baskets
-    print(f"{product}: {support:.2%}")
-
-print("\\n总订单数:", total_baskets)
-`,
-    expectedOutput: '总订单数: 4',
-    solution: `# 关联规则挖掘 - 完整答案
-from collections import defaultdict, Counter
+    starterCode: `from collections import Counter
 from itertools import combinations
 
 baskets = [
@@ -182,71 +82,40 @@ baskets = [
     ['牛奶']
 ]
 
-total_baskets = len(baskets)
+total = len(baskets)
 product_count = Counter()
-
 for basket in baskets:
-    for product in basket:
-        product_count[product] += 1
+    for p in basket:
+        product_count[p] += 1
 
-print("商品出现次数:")
+print("商品出现次数 & 支持度:")
 for product, count in product_count.items():
-    support = count / total_baskets
-    print(f"{product}: {support:.2%}")
+    print(f"  {product}: {count}次, 支持度 {count/total:.1%}")
 
-print("\\n总订单数:", total_baskets)
-
-print("\\n商品组合的支持度:")
-pairs_count = defaultdict(int)
+print("\n商品组合的支持度:")
+pair_count = Counter()
 for basket in baskets:
     for pair in combinations(sorted(basket), 2):
-        pairs_count[pair] += 1
+        pair_count[pair] += 1
 
-for pair, count in pairs_count.items():
-    support = count / total_baskets
-    print(f"{pair}: {support:.2%}")
+for pair, count in pair_count.items():
+    print(f"  {pair}: {count}次, 支持度 {count/total:.1%}")
 
-print("\\n简单推荐规则:")
-for (a, b), count in pairs_count.items():
+print("\n简单推荐规则:")
+for (a, b), count in pair_count.items():
     confidence = count / product_count[a]
-    print(f"买了{a}的人，也买了{b}: 置信度{confidence:.2%}")
-`,
-    hint: '使用itertools.combinations生成商品组合，用Counter统计出现频率。'
+    print(f"  买了 '{a}' 的人，也买了 '{b}': 置信度 {confidence:.1%}")`,
+    expectedOutput: '也买了',
+    hint: '使用 itertools.combinations 生成商品组合，用 Counter 统计。',
+    packages: [],
   },
   '4': {
     id: '4',
     projectId: '2',
     title: 'RFM特征计算',
-    description: '计算用户的RFM特征：最近消费、消费频率、消费金额。',
+    description: '计算用户的 RFM 特征：最近消费天数、消费频次、消费金额。',
     difficulty: 'medium',
-    starterCode: `# RFM特征计算
-import pandas as pd
-from datetime import datetime
-
-# 用户订单数据
-data = {
-    'user_id': [1, 1, 2, 2, 2, 3, 3, 3, 3, 4],
-    'order_date': ['2024-01-01', '2024-01-15', '2024-01-05', '2024-01-10', '2024-01-20',
-                   '2024-01-02', '2024-01-08', '2024-01-18', '2024-01-25', '2024-01-01'],
-    'amount': [100, 150, 80, 120, 200, 50, 75, 180, 90, 60]
-}
-
-df = pd.DataFrame(data)
-df['order_date'] = pd.to_datetime(df['order_date'])
-
-# TODO: 计算RFM特征
-print("原始数据:")
-print(df.head())
-
-current_date = df['order_date'].max()
-print(f"\\n当前日期: {current_date}")
-
-print("\\n计算RFM特征中...")
-`,
-    expectedOutput: '计算RFM特征中...',
-    solution: `# RFM特征计算 - 完整答案
-import pandas as pd
-from datetime import datetime
+    starterCode: `import pandas as pd
 
 data = {
     'user_id': [1, 1, 2, 2, 2, 3, 3, 3, 3, 4],
@@ -254,170 +123,111 @@ data = {
                    '2024-01-02', '2024-01-08', '2024-01-18', '2024-01-25', '2024-01-01'],
     'amount': [100, 150, 80, 120, 200, 50, 75, 180, 90, 60]
 }
-
 df = pd.DataFrame(data)
 df['order_date'] = pd.to_datetime(df['order_date'])
 
-print("原始数据:")
-print(df.head())
-
 current_date = df['order_date'].max()
-print(f"\\n当前日期: {current_date}")
+print(f"分析截止日期: {current_date.date()}")
 
-print("\\n计算RFM特征中...")
-
+# 计算 RFM
 rfm = df.groupby('user_id').agg(
     recency=('order_date', lambda x: (current_date - x.max()).days),
-    frequency=('order_id', 'count'),
-    monetary=('amount', 'sum')
+    frequency=('order_date', 'count'),
+    monetary=('amount', 'sum'),
 ).reset_index()
 
-print("\\nRFM特征:")
+print("\nRFM 特征表:")
 print(rfm)
-
-print("\\nRFM统计:")
-print(rfm.describe())
-`,
-    hint: '使用groupby聚合用户数据，用lambda函数计算最近消费天数。'
+print("\n统计摘要:")
+print(rfm.describe().round(1))`,
+    expectedOutput: 'RFM 特征表',
+    hint: 'Recency = 当前日期 - 最近消费日期；Frequency = 订单数；Monetary = 总金额。',
+    packages: ['pandas'],
   },
   '5': {
     id: '5',
     projectId: '2',
     title: 'KMeans用户分群',
-    description: '使用KMeans聚类算法对用户进行价值分群。',
+    description: '用 KMeans 聚类算法对用户进行价值分群。',
     difficulty: 'medium',
-    starterCode: `# KMeans用户分群
-import pandas as pd
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-
-# RFM数据
-rfm_data = {
-    'user_id': [1, 2, 3, 4],
-    'recency': [10, 5, 0, 24],
-    'frequency': [2, 3, 4, 1],
-    'monetary': [250, 400, 395, 60]
-}
-
-rfm = pd.DataFrame(rfm_data)
-print("原始RFM数据:")
-print(rfm)
-
-# TODO: 特征标准化和聚类
-features = rfm[['recency', 'frequency', 'monetary']]
-
-print("\\n特征标准化中...")
-scaler = StandardScaler()
-scaled_features = scaler.fit_transform(features)
-`,
-    expectedOutput: '特征标准化中...',
-    solution: `# KMeans用户分群 - 完整答案
-import pandas as pd
+    starterCode: `import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 rfm_data = {
-    'user_id': [1, 2, 3, 4],
-    'recency': [10, 5, 0, 24],
-    'frequency': [2, 3, 4, 1],
-    'monetary': [250, 400, 395, 60]
+    'user_id': [1, 2, 3, 4, 5, 6],
+    'recency':   [10,  5,  0, 24,  3, 30],
+    'frequency': [2,  3,  4,  1,  5,  1],
+    'monetary': [250, 400, 395, 60, 600, 50]
 }
-
 rfm = pd.DataFrame(rfm_data)
-print("原始RFM数据:")
+print("原始 RFM 数据:")
 print(rfm)
 
+# 标准化
 features = rfm[['recency', 'frequency', 'monetary']]
-
-print("\\n特征标准化中...")
 scaler = StandardScaler()
-scaled_features = scaler.fit_transform(features)
+scaled = scaler.fit_transform(features)
+print("\n标准化后:")
+print(pd.DataFrame(scaled, columns=features.columns).round(2))
 
-print("\\n标准化后的数据:")
-print(pd.DataFrame(scaled_features, columns=features.columns))
+# KMeans 聚类
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+rfm['cluster'] = kmeans.fit_predict(scaled)
 
-print("\\nKMeans聚类中...")
-kmeans = KMeans(n_clusters=3, random_state=42)
-rfm['cluster'] = kmeans.fit_predict(scaled_features)
-
-print("\\n分群结果:")
+print("\n分群结果:")
 print(rfm)
 
-print("\\n各群统计:")
-cluster_stats = rfm.groupby('cluster').agg({
-    'recency': 'mean',
-    'frequency': 'mean',
-    'monetary': 'mean',
-    'user_id': 'count'
-}).round(1)
-cluster_stats.columns = ['平均最近天数', '平均消费频率', '平均消费金额', '用户数量']
-print(cluster_stats)
-`,
-    hint: '使用StandardScaler标准化特征，然后用KMeans进行聚类。'
+# 每个簇的画像
+print("\n每群画像:")
+print(rfm.groupby('cluster').agg(
+    人数=('user_id', 'count'),
+    平均recency=('recency', 'mean'),
+    平均frequency=('frequency', 'mean'),
+    平均monetary=('monetary', 'mean'),
+).round(1))`,
+    expectedOutput: '分群结果',
+    hint: '标准化后再聚类，聚类后用 groupby + agg 看每群画像。',
+    packages: ['pandas', 'scikit-learn'],
   },
   '6': {
     id: '6',
     projectId: '3',
     title: '数据清洗基础',
-    description: '学习处理缺失值、重复值和异常值。',
+    description: '处理缺失值、重复值和异常值。',
     difficulty: 'easy',
-    starterCode: `# 数据清洗基础
-import pandas as pd
-import numpy as np
-
-# 包含问题的数据
-data = {
-    'order_id': [1, 2, 3, 4, 5, 5, 6],
-    'amount': [100, -50, 150, np.nan, 80, 80, 1000],
-    'user_id': [101, 102, 103, 104, 105, 105, 106]
-}
-
-df = pd.DataFrame(data)
-print("原始数据:")
-print(df)
-
-print("\\n开始数据清洗...")
-`,
-    expectedOutput: '开始数据清洗...',
-    solution: `# 数据清洗基础 - 完整答案
-import pandas as pd
+    starterCode: `import pandas as pd
 import numpy as np
 
 data = {
     'order_id': [1, 2, 3, 4, 5, 5, 6],
-    'amount': [100, -50, 150, np.nan, 80, 80, 1000],
-    'user_id': [101, 102, 103, 104, 105, 105, 106]
+    'amount':   [100, -50, 150, np.nan, 80, 80, 1000],
+    'user_id':  [101, 102, 103, 104, 105, 105, 106]
 }
-
 df = pd.DataFrame(data)
 print("原始数据:")
 print(df)
 
-print("\\n开始数据清洗...")
-
-print("\\n1. 检查重复订单:")
-duplicates = df.duplicated('order_id', keep='first')
-print(f"重复订单数量: {duplicates.sum()}")
-
+# 1) 去重
+dup = df.duplicated('order_id').sum()
+print(f"\n重复订单数: {dup}")
 df_clean = df.drop_duplicates('order_id', keep='first')
-print(f"删除重复后数据形状: {df_clean.shape}")
+print(f"去重后形状: {df_clean.shape}")
 
-print("\\n2. 检查缺失值:")
-missing = df_clean.isnull().sum()
-print(missing)
-
+# 2) 缺失值
+missing = df_clean['amount'].isnull().sum()
+print(f"\n缺失金额数: {missing}")
 df_clean = df_clean.dropna(subset=['amount'])
-print(f"删除缺失后数据形状: {df_clean.shape}")
 
-print("\\n3. 检查异常金额:")
-negative_amounts = (df_clean['amount'] <= 0).sum()
-print(f"异常金额数量: {negative_amounts}")
-
+# 3) 异常值（负数 / 超大值）
+print(f"\n异常(<=0)金额数: {(df_clean['amount'] <= 0).sum()}")
 df_clean = df_clean[df_clean['amount'] > 0]
-print(f"清洗后最终数据:")
-print(df_clean)
-`,
-    hint: '使用duplicated检查重复，isnull检查缺失，条件筛选处理异常值。'
+
+print("\n清洗后数据:")
+print(df_clean.reset_index(drop=True))`,
+    expectedOutput: '清洗后数据',
+    hint: 'duplicated → drop_duplicates，isnull → dropna，条件过滤处理异常值。',
+    packages: ['pandas', 'numpy'],
   },
   '7': {
     id: '7',
@@ -425,359 +235,358 @@ print(df_clean)
     title: '漏斗分析基础',
     description: '计算用户在购物流程各阶段的转化率。',
     difficulty: 'medium',
-    starterCode: `# 漏斗分析基础
-import pandas as pd
+    starterCode: `import pandas as pd
 
-# 用户行为数据
 data = {
-    'user_id': [1, 1, 1, 2, 2, 3, 3, 3, 4],
-    'step': ['浏览', '加购', '支付', '浏览', '加购', '浏览', '加购', '支付', '浏览'],
-    'timestamp': pd.date_range('2024-01-01', periods=9, freq='H')
+    'user_id': [1, 1, 1, 2, 2, 3, 3, 3, 4, 5],
+    'step':    ['浏览', '加购', '支付', '浏览', '加购', '浏览', '加购', '支付', '浏览', '浏览']
 }
-
 df = pd.DataFrame(data)
 print("用户行为数据:")
 print(df)
-
-print("\\n计算各阶段用户数...")
-`,
-    expectedOutput: '计算各阶段用户数...',
-    solution: `# 漏斗分析基础 - 完整答案
-import pandas as pd
-
-data = {
-    'user_id': [1, 1, 1, 2, 2, 3, 3, 3, 4],
-    'step': ['浏览', '加购', '支付', '浏览', '加购', '浏览', '加购', '支付', '浏览'],
-    'timestamp': pd.date_range('2024-01-01', periods=9, freq='H')
-}
-
-df = pd.DataFrame(data)
-print("用户行为数据:")
-print(df)
-
-print("\\n计算各阶段用户数...")
 
 funnel_steps = ['浏览', '加购', '支付']
-funnel_data = []
-
+rows = []
 for step in funnel_steps:
-    user_count = df[df['step'] == step]['user_id'].nunique()
-    funnel_data.append({'步骤': step, '用户数': user_count})
+    n = df[df['step'] == step]['user_id'].nunique()
+    rows.append({'步骤': step, '用户数': n})
+funnel = pd.DataFrame(rows)
 
-funnel_df = pd.DataFrame(funnel_data)
-print("\\n漏斗数据:")
-print(funnel_df)
+print("\n漏斗数据:")
+print(funnel)
 
-funnel_df['转化率'] = funnel_df['用户数'] / funnel_df['用户数'].iloc[0]
-funnel_df['累计留存率'] = funnel_df['转化率']
-
-print("\\n完整漏斗分析:")
-for i, row in funnel_df.iterrows():
+print("\n转化率:")
+top = funnel['用户数'].iloc[0]
+for i, row in funnel.iterrows():
+    rate = row['用户数'] / top
+    prev_rate = row['用户数'] / (funnel['用户数'].iloc[i-1] if i > 0 else top)
     if i == 0:
-        print(f"{row['步骤']}: {row['用户数']}人")
+        print(f"{row['步骤']}: {row['用户数']}人 (100%)")
     else:
-        print(f"{row['步骤']}: {row['用户数']}人 (转化率: {row['转化率']:.1%})")
-`,
-    hint: '用nunique统计每个阶段的独立用户数，计算从上一阶段到当前阶段的转化率。'
+        print(f"{row['步骤']}: {row['用户数']}人 (总体{rate:.1%}, 相对上一步{prev_rate:.1%})")`,
+    expectedOutput: '转化率',
+    hint: '用 nunique 统计每个阶段独立用户数，逐步计算转化率。',
+    packages: ['pandas'],
   },
   '8': {
     id: '8',
     projectId: '5',
     title: '时间序列分析',
-    description: '分析销售趋势和季节性变化。',
+    description: '分析销售趋势与周内规律。',
     difficulty: 'advanced',
-    starterCode: `# 时间序列分析
-import pandas as pd
+    starterCode: `import pandas as pd
 import numpy as np
 
-# 销售数据
+# 90 天销售数据
+np.random.seed(42)
 dates = pd.date_range('2024-01-01', periods=90, freq='D')
 sales = np.random.randint(50, 200, 90) + np.sin(np.linspace(0, 6*np.pi, 90)) * 30
-
 df = pd.DataFrame({'date': dates, 'sales': sales})
-df = df.set_index('date')
 
-print("销售数据前5行:")
-print(df.head())
+print("销售数据前10行:")
+print(df.head(10))
 
-print("\\n开始时间序列分析...")
-`,
-    expectedOutput: '开始时间序列分析...',
-    solution: `# 时间序列分析 - 完整答案
-import pandas as pd
-import numpy as np
-
-dates = pd.date_range('2024-01-01', periods=90, freq='D')
-sales = np.random.randint(50, 200, 90) + np.sin(np.linspace(0, 6*np.pi, 90)) * 30
-
-df = pd.DataFrame({'date': dates, 'sales': sales})
-df = df.set_index('date')
-
-print("销售数据前5行:")
-print(df.head())
-
-print("\\n开始时间序列分析...")
-
-print("\\n1. 按月聚合:")
-monthly = df.resample('M')['sales'].sum()
+print("\n1) 按月聚合:")
+df_m = df.copy()
+df_m['month'] = df_m['date'].dt.to_period('M')
+monthly = df_m.groupby('month')['sales'].sum()
 print(monthly)
 
-print("\\n2. 7天移动平均:")
-df['ma_7'] = df['sales'].rolling(window=7).mean()
-print(df[['sales', 'ma_7']].head(10))
+print("\n2) 7 日移动平均（最后10天）:")
+df['ma7'] = df['sales'].rolling(window=7).mean()
+print(df[['date', 'sales', 'ma7']].tail(10).round(1))
 
-print("\\n3. 统计指标:")
+print("\n3) 基本统计:")
 print(f"日均销量: {df['sales'].mean():.1f}")
-print(f"最高销量: {df['sales'].max():.0f} (日期: {df['sales'].idxmax().date()})")
-print(f"最低销量: {df['sales'].min():.0f} (日期: {df['sales'].idxmin().date()})")
+print(f"最高销量: {df['sales'].max():.0f}")
+print(f"最低销量: {df['sales'].min():.0f}")
 
-print("\\n4. 周几销量分析:")
-df['weekday'] = df.index.weekday
-weekday_sales = df.groupby('weekday')['sales'].mean()
+print("\n4) 周内销量画像:")
 weekday_names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-weekday_sales.index = weekday_names
-print(weekday_sales.sort_values(ascending=False))
-`,
-    hint: '使用resample按时间聚合，rolling计算移动平均，weekday提取星期信息。'
+df['weekday'] = df['date'].dt.weekday
+w = df.groupby('weekday')['sales'].mean()
+w.index = weekday_names
+print(w.sort_values(ascending=False).round(1))`,
+    expectedOutput: '周内销量画像',
+    hint: 'resample / rolling / dt.weekday 是时间序列三大利器。',
+    packages: ['pandas', 'numpy'],
   },
   '9': {
     id: '9',
     projectId: '9',
     title: 'A/B测试分析',
-    description: '分析促销活动的效果，计算提升度和统计显著性。',
+    description: '用卡方检验判断 A/B 实验是否显著。',
     difficulty: 'medium',
-    starterCode: `# A/B测试分析
+    starterCode: `import numpy as np
 import pandas as pd
-import numpy as np
-from scipy import stats
-
-# 实验数据
-np.random.seed(42)
-data = {
-    'user_id': range(1, 1001),
-    'group': np.random.choice(['control', 'treatment'], 1000, p=[0.5, 0.5]),
-    'purchased': np.random.binomial(1, 0.08, 1000)
-}
-
-df = pd.DataFrame(data)
-df.loc[df['group'] == 'treatment', 'purchased'] = np.random.binomial(1, 0.12, 
-                                                                      len(df[df['group'] == 'treatment']))
-
-print("实验数据前10行:")
-print(df.head(10))
-
-print("\\n开始A/B测试分析...")
-`,
-    expectedOutput: '开始A/B测试分析...',
-    solution: `# A/B测试分析 - 完整答案
-import pandas as pd
-import numpy as np
 from scipy import stats
 
 np.random.seed(42)
-data = {
-    'user_id': range(1, 1001),
-    'group': np.random.choice(['control', 'treatment'], 1000, p=[0.5, 0.5]),
-    'purchased': np.random.binomial(1, 0.08, 1000)
-}
+n = 1000
+# 构造对照组 8% 转化，实验组 11% 转化
+control = np.random.binomial(1, 0.08, n // 2)
+treat = np.random.binomial(1, 0.11, n // 2)
 
-df = pd.DataFrame(data)
-df.loc[df['group'] == 'treatment', 'purchased'] = np.random.binomial(1, 0.12, 
-                                                                      len(df[df['group'] == 'treatment']))
-
-print("实验数据前10行:")
-print(df.head(10))
-
-print("\\n开始A/B测试分析...")
-
-ab_summary = df.groupby('group').agg({
-    'user_id': 'count',
-    'purchased': ['sum', 'mean']
+df = pd.DataFrame({
+    'group': ['control'] * (n // 2) + ['treatment'] * (n // 2),
+    'purchased': np.concatenate([control, treat])
 })
 
-ab_summary.columns = ['用户数', '购买人数', '购买率']
-print("\\n两组表现:")
-print(ab_summary)
+# 汇总
+summary = df.groupby('group')['purchased'].agg(
+    用户数='count', 购买人数='sum', 购买率='mean'
+).round(3)
+print("实验表现:")
+print(summary)
 
-control_rate = ab_summary.loc['control', '购买率']
-treatment_rate = ab_summary.loc['treatment', '购买率']
-lift = (treatment_rate - control_rate) / control_rate * 100
+ctrl_rate = summary.loc['control', '购买率']
+treat_rate = summary.loc['treatment', '购买率']
+lift = (treat_rate - ctrl_rate) / ctrl_rate * 100
+print(f"\n提升效果: +{lift:.1f}%")
 
-print(f"\\n对照组购买率: {control_rate:.1%}")
-print(f"实验组购买率: {treatment_rate:.1%}")
-print(f"提升效果: {lift:.1f}%")
-
-print("\\n统计显著性检验:")
-control_purchased = ab_summary.loc['control', '购买人数']
-treatment_purchased = ab_summary.loc['treatment', '购买人数']
-control_total = ab_summary.loc['control', '用户数']
-treatment_total = ab_summary.loc['treatment', '用户数']
-
-contingency_table = [
-    [control_purchased, control_total - control_purchased],
-    [treatment_purchased, treatment_total - treatment_purchased]
+# 卡方检验
+table = [
+    [summary.loc['control', '购买人数'],    summary.loc['control', '用户数'] - summary.loc['control', '购买人数']],
+    [summary.loc['treatment', '购买人数'], summary.loc['treatment', '用户数'] - summary.loc['treatment', '购买人数']],
 ]
-
-chi2, p_value, dof, expected = stats.chi2_contingency(contingency_table)
-
-print(f"卡方值: {chi2:.4f}")
-print(f"P值: {p_value:.4f}")
-print(f"{'实验结果显著' if p_value < 0.05 else '实验结果不显著'}")
-`,
-    hint: '使用卡方检验比较两组转化率的差异，计算提升度。'
+chi2, p, dof, expected = stats.chi2_contingency(table)
+print(f"\n卡方值: {chi2:.3f}, P值: {p:.4f}")
+print(f"结论: {'显著' if p < 0.05 else '不显著'}（α = 0.05）")`,
+    expectedOutput: '卡方值',
+    hint: '用 chi2_contingency 判断两组转化率是否显著不同。',
+    packages: ['pandas', 'numpy', 'scipy'],
   },
   '10': {
     id: '10',
     projectId: '10',
     title: '综合数据处理',
-    description: '综合运用所有技能，完成完整的数据分析流程。',
+    description: '综合运用所学技能，完成一个完整的小型分析项目。',
     difficulty: 'advanced',
-    starterCode: `# 综合数据处理项目
-import pandas as pd
-import numpy as np
+    starterCode: `import pandas as pd
 
-print("电商数据分析综合项目")
-print("=" * 50)
-
-# TODO: 综合应用所学技能
-print("\\n1. 数据加载与合并")
-print("2. 数据清洗")
-print("3. 特征工程")
-print("4. 数据分析")
-print("5. 结果导出")
-
-print("\\n项目进行中...")
-`,
-    expectedOutput: '项目进行中...',
-    solution: `# 综合数据处理项目 - 完整答案
-import pandas as pd
-import numpy as np
-
-print("电商数据分析综合项目")
-print("=" * 50)
-
-print("\\n1. 数据加载与合并")
-
-# 创建模拟数据
-orders_data = {
-    'order_id': [1, 2, 3, 4, 5, 6, 7, 8],
-    'user_id': [101, 102, 101, 103, 104, 102, 105, 101],
-    'product': ['牛奶', '面包', '鸡蛋', '牛奶', '饼干', '面包', '牛奶', '黄油'],
-    'amount': [25, 15, 12, 25, 18, 15, 25, 20],
-    'date': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-05', 
-             '2024-01-06', '2024-01-08', '2024-01-10', '2024-01-15']
-}
-
-users_data = {
+# 订单 + 用户数据
+orders = pd.DataFrame({
+    'order_id': range(1, 9),
+    'user_id':  [101, 102, 101, 103, 104, 102, 105, 101],
+    'product':  ['牛奶', '面包', '鸡蛋', '牛奶', '饼干', '面包', '牛奶', '黄油'],
+    'amount':   [25, 15, 12, 25, 18, 15, 25, 20],
+    'date': pd.to_datetime(['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-05',
+                            '2024-01-06', '2024-01-08', '2024-01-10', '2024-01-15'])
+})
+users = pd.DataFrame({
     'user_id': [101, 102, 103, 104, 105],
-    'age': [25, 30, 28, 35, 22],
-    'city': ['北京', '上海', '广州', '深圳', '北京']
-}
-
-orders = pd.DataFrame(orders_data)
-users = pd.DataFrame(users_data)
+    'age':     [25,  30,  28,  35,  22],
+    'city':    ['北京', '上海', '广州', '深圳', '北京']
+})
 
 print("订单数据:")
-print(orders.head())
-print("\\n用户数据:")
-print(users.head())
+print(orders)
+print("\n用户数据:")
+print(users)
 
-print("\\n合并数据...")
+# 合并
 df = pd.merge(orders, users, on='user_id', how='left')
-print(f"合并后数据形状: {df.shape}")
+print(f"\n合并后形状: {df.shape}")
 
-print("\\n2. 数据分析")
-print("\\n商品销量排行:")
-product_sales = df.groupby('product')['amount'].agg(['sum', 'count'])
-product_sales.columns = ['总金额', '销售量']
-print(product_sales.sort_values('总金额', ascending=False))
+# 商品销量
+print("\n商品销售排行榜:")
+product_sales = df.groupby('product')['amount'].agg(['sum', 'count']).sort_values('sum', ascending=False)
+product_sales.columns = ['总金额', '销量']
+print(product_sales)
 
-print("\\n城市销售分布:")
-city_sales = df.groupby('city')['amount'].sum()
-print(city_sales.sort_values(ascending=False))
+# 城市销售
+print("\n城市销售额:")
+print(df.groupby('city')['amount'].sum().sort_values(ascending=False))
 
-print("\\n用户RFM分析:")
-df['date'] = pd.to_datetime(df['date'])
+# RFM
 current_date = df['date'].max()
-
 rfm = df.groupby('user_id').agg(
     recency=('date', lambda x: (current_date - x.max()).days),
     frequency=('order_id', 'count'),
-    monetary=('amount', 'sum')
+    monetary=('amount', 'sum'),
 )
-
+print("\n用户 RFM:")
 print(rfm)
 
-print("\\n项目完成！")
-`,
-    hint: '综合运用merge、groupby、agg、时间处理等技能完成完整流程。'
+print("\n项目完成！")`,
+    expectedOutput: '项目完成',
+    hint: 'merge / groupby / agg / to_datetime，这些 pandas 基本技能组合起来就能做完整项目。',
+    packages: ['pandas'],
+  },
+};
+
+// ================= 真正的 Python 运行器（Pyodide） =================
+// 关键点：
+// 1) 通过 CDN 加载 pyodide.js，避免 npm 包打包问题
+// 2) 拦截 Python 的 stdout/stderr 并显示到页面
+// 3) 首次运行需要加载 numpy/pandas，约几秒，请耐心等待
+// =================
+
+declare global {
+  interface Window {
+    loadPyodide: (opts?: { indexURL: string }) => Promise<any>;
+    pyodide: any;
   }
+}
+
+const PYODIDE_CDN = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/';
+
+const usePyodide = () => {
+  const pyodideRef = useRef<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadStatus, setLoadStatus] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      try {
+        // 1) 动态注入 pyodide 脚本
+        if (!(window as any).loadPyodide) {
+          setLoadStatus('加载 Python 运行环境脚本...');
+          await new Promise<void>((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = `${PYODIDE_CDN}pyodide.js`;
+            s.async = true;
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Pyodide 脚本加载失败，请检查网络'));
+            document.head.appendChild(s);
+          });
+        }
+
+        // 2) 初始化 pyodide
+        setLoadStatus('初始化 Python 内核...');
+        const py = await (window as any).loadPyodide({ indexURL: PYODIDE_CDN });
+        pyodideRef.current = py;
+
+        // 3) 加载常用科学计算包（micropip + pip 安装）
+        setLoadStatus('加载 numpy/pandas/scipy/sklearn（首次较慢，约 20-40 秒）...');
+        await py.loadPackage(['micropip', 'numpy', 'pandas', 'scikit-learn', 'scipy']);
+
+        if (!cancelled) {
+          setLoadStatus('');
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.error(err);
+        if (!cancelled) {
+          setLoadStatus(`加载失败：${err?.message || String(err)}`);
+          setLoading(false);
+        }
+      }
+    };
+
+    bootstrap();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { pyodide: pyodideRef.current, loading, loadStatus };
 };
 
 const Practice: React.FC = () => {
   const { courseId, exerciseId } = useParams<{ courseId: string; exerciseId: string }>();
   const currentExercise = practiceData[exerciseId || '1'] || practiceData['1'];
-  
+
+  const { pyodide, loading, loadStatus } = usePyodide();
+
   const [code, setCode] = useState(currentExercise.starterCode);
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const allExercises = Object.values(practiceData);
+  // 切到新题目时重新载入代码
+  useEffect(() => {
+    setCode(currentExercise.starterCode);
+    setOutput('');
+    setIsCorrect(null);
+  }, [exerciseId, currentExercise.starterCode]);
 
-  // 简单的Python解析器 - 处理print语句
-  const simplePythonRunner = (code: string): string => {
-    let output = '';
-    const lines = code.split('\n');
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      
-      // 跳过注释和空行
-      if (trimmed.startsWith('#') || trimmed === '') continue;
-      
-      // 处理print语句
-      if (trimmed.startsWith('print(')) {
-        try {
-          const contentMatch = trimmed.match(/print\\((.*)\\)/);
-          if (contentMatch) {
-            let content = contentMatch[1];
-            
-            if ((content.startsWith('"') && content.endsWith('"')) || 
-                (content.startsWith("'") && content.endsWith("'"))) {
-              content = content.substring(1, content.length - 1);
-            }
-            
-            output += content + '\n';
-          }
-        } catch (e) {
-          output += `语法错误: ${line}\\n`;
-        }
-      }
-    }
-    
-    return output || '(无输出，请添加print语句查看结果)';
-  };
+  const allExercises = Object.values(practiceData);
+  const projectExercises = allExercises.filter(e => e.projectId === courseId);
+  const exerciseIndex = projectExercises.findIndex(e => e.id === currentExercise.id);
+  const prevExercise = exerciseIndex > 0 ? projectExercises[exerciseIndex - 1] : null;
+  const nextExercise = exerciseIndex < projectExercises.length - 1 ? projectExercises[exerciseIndex + 1] : null;
 
   const handleRunCode = async () => {
+    if (loading || !pyodide) {
+      setOutput('⏳ Python 环境还在加载中，请稍候再点运行...');
+      return;
+    }
     setIsRunning(true);
-    setOutput('运行中...');
+    setOutput('▶ 代码运行中，请稍候...\n');
     setIsCorrect(null);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const userOutput = simplePythonRunner(code);
-      setOutput(userOutput);
-      
-      const trimmedOutput = userOutput.trim();
-      const expectedOutput = currentExercise.expectedOutput.trim();
-      setIsCorrect(trimmedOutput === expectedOutput);
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      setOutput(`错误: ${errorMessage}`);
+      const py = pyodide;
+
+      // 用 runPythonAsync + 自定义 stdout 捕获 print
+      // Pyodide.runPythonAsync 会把 Python stdout 打印到 console
+      // 我们通过 sys.stdout 重定向来捕获
+      const captureCode = `
+import io, sys, traceback
+_buffer = io.StringIO()
+_old_stdout = sys.stdout
+_old_stderr = sys.stderr
+sys.stdout = _buffer
+sys.stderr = _buffer
+try:
+    pass
+except Exception:
+    pass
+_EOF_FLAG_OK = "__PYODIDE_OUTPUT_END__"
+`;
+      await py.runPythonAsync(captureCode);
+
+      const runner = `
+import sys as _sys
+_buf = io.StringIO()
+_sys.stdout = _buf
+_sys.stderr = _buf
+_err = None
+try:
+    exec(${JSON.stringify(code)}, {'__name__': '__main__'})
+except Exception:
+    _err = traceback.format_exc()
+finally:
+    _sys.stdout = _old_stdout
+    _sys.stderr = _old_stderr
+result = _buf.getvalue()
+if _err:
+    result += ("\\n===== 运行时错误 =====\\n" + _err)
+`;
+
+      await py.runPythonAsync(runner);
+      let captured: string = py.globals.get('result') || '';
+
+      // 如果 stdout 捕获失败，兜底用 globals 里的 print 缓冲区
+      if (!captured.trim()) {
+        try {
+          const fallback = await py.runPythonAsync(
+            `_buffer.getvalue() if '_buffer' in dir() else ''`
+          );
+          if (fallback) captured = fallback;
+        } catch { /* ignore */ }
+      }
+
+      captured = captured.trim();
+
+      // 判断是否匹配预期关键字（避免逐字节完全相等过于严格）
+      if (!captured) {
+        setOutput('(你的代码没有任何 print 输出，请添加 print 语句查看结果)');
+      } else {
+        setOutput(captured);
+      }
+
+      // 简单匹配：输出是否包含 expectedOutput 的文本
+      const expected = (currentExercise.expectedOutput || '').trim();
+      if (expected) {
+        setIsCorrect(captured.includes(expected));
+      } else {
+        setIsCorrect(captured.length > 0);
+      }
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setOutput(`❌ 运行出错:\n${msg}`);
       setIsCorrect(false);
     } finally {
       setIsRunning(false);
@@ -789,192 +598,150 @@ const Practice: React.FC = () => {
     setOutput('');
     setIsCorrect(null);
   };
-
-  const handleShowSolution = () => {
-    setCode(currentExercise.solution);
-  };
-
-  const projectExercises = allExercises.filter(e => e.projectId === courseId);
-  const exerciseIndex = projectExercises.findIndex(e => e.id === currentExercise.id);
-  const prevExercise = exerciseIndex > 0 ? projectExercises[exerciseIndex - 1] : null;
-  const nextExercise = exerciseIndex < projectExercises.length - 1 ? projectExercises[exerciseIndex + 1] : null;
+  const handleShowSolution = () => setCode(currentExercise.solution);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2 text-sm text-gray-500">
+      {/* 面包屑 */}
+      <div className="flex items-center space-x-2 text-sm text-gray-500 flex-wrap gap-y-1">
         <Link to="/" className="hover:text-blue-600">首页</Link>
-        <ChevronLeft size={16} />
-        <Link to="/courses" className="hover:text-blue-600">课程中心</Link>
-        <ChevronLeft size={16} />
-        <Link to={`/courses/${courseId}`} className="hover:text-blue-600">项目{courseId}</Link>
-        <ChevronLeft size={16} />
+        <span>/</span>
+        <Link to="/courses" className="hover:text-blue-600">项目中心</Link>
+        <span>/</span>
+        <Link to={`/courses/${courseId}`} className="hover:text-blue-600">项目 {courseId}</Link>
+        <span>/</span>
         <span className="text-gray-700 font-medium">代码练习</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center mb-4">
+          {/* 题目卡片 */}
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex flex-wrap items-center gap-3 mb-3">
               <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                currentExercise.difficulty === 'easy' ? 'bg-green-100 text-green-800' : 
-                currentExercise.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                currentExercise.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
+                currentExercise.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-red-100 text-red-800'
               }`}>
-                {currentExercise.difficulty === 'easy' ? '简单' : 
+                {currentExercise.difficulty === 'easy' ? '简单' :
                  currentExercise.difficulty === 'medium' ? '中等' : '困难'}
               </span>
-              <h1 className="text-2xl font-bold ml-3">{currentExercise.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{currentExercise.title}</h1>
             </div>
-            <p className="text-gray-600 mb-4">{currentExercise.description}</p>
-            
-            <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-gray-600">{currentExercise.description}</p>
+
+            {loading && (
+              <div className="mt-4 flex items-center text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
+                <Loader2 size={18} className="mr-2 animate-spin" />
+                {loadStatus || '正在准备 Python 环境...'}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-4 mt-4 border-t">
               {prevExercise ? (
-                <Link
-                  to={`/practice/${courseId}/${prevExercise.id}`}
-                  className="flex items-center text-blue-600 hover:underline"
-                >
-                  <ArrowLeft size={16} className="mr-2" />
-                  上一题: {prevExercise.title}
+                <Link to={`/practice/${courseId}/${prevExercise.id}`}
+                      className="flex items-center text-blue-600 hover:underline text-sm">
+                  <ArrowLeft size={16} className="mr-1" /> 上一题
                 </Link>
-              ) : (
-                <div></div>
-              )}
+              ) : <span />}
               {nextExercise ? (
-                <Link
-                  to={`/practice/${courseId}/${nextExercise.id}`}
-                  className="flex items-center text-blue-600 hover:underline"
-                >
-                  下一题: {nextExercise.title}
-                  <ArrowRight size={16} className="ml-2" />
+                <Link to={`/practice/${courseId}/${nextExercise.id}`}
+                      className="flex items-center text-blue-600 hover:underline text-sm">
+                  下一题 <ArrowRight size={16} className="ml-1" />
                 </Link>
-              ) : (
-                <div></div>
-              )}
+              ) : <span />}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
+          {/* 代码编辑器 */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+            <div className="bg-gray-900 text-gray-200 px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <span className="ml-3 text-sm font-mono">practice.py</span>
               </div>
-              <span className="text-sm">practice.py</span>
               <div className="flex space-x-2">
-                <button
-                  onClick={handleResetCode}
-                  className="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 transition"
-                >
-                  重置
-                </button>
-                <button
-                  onClick={handleShowSolution}
-                  className="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 transition"
-                >
-                  查看答案
-                </button>
+                <button onClick={handleResetCode} className="text-xs px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition">重置</button>
+                <button onClick={handleShowSolution} className="text-xs px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition">查看答案</button>
               </div>
             </div>
             <textarea
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full h-[400px] p-4 font-mono text-sm bg-gray-50 border-t border-gray-200 focus:outline-none"
+              className="w-full h-[400px] p-4 font-mono text-sm bg-gray-50 border-t border-gray-200 focus:outline-none text-gray-900 leading-6"
               spellCheck={false}
-            ></textarea>
-            <div className="p-4 border-t flex justify-end space-x-3">
+            />
+            <div className="p-4 border-t flex justify-end space-x-3 bg-gray-50">
               <button
                 onClick={handleRunCode}
-                disabled={isRunning}
-                className={`flex items-center px-4 py-2 rounded-lg transition ${
-                  isRunning ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                <Play size={16} className="mr-2" />
-                {isRunning ? '运行中...' : '运行代码'}
+                disabled={isRunning || loading}
+                className={`flex items-center px-5 py-2.5 rounded-lg transition font-semibold shadow ${
+                  isRunning || loading
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}>
+                {isRunning ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Play size={16} className="mr-2" />}
+                {isRunning ? '运行中...' : loading ? '环境加载中...' : '▶ 运行代码'}
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm">
-            <div className="bg-gray-800 text-white p-3">
-              <span>输出结果</span>
-            </div>
-            <div className="p-4 min-h-[200px] bg-gray-50 border-t font-mono text-sm">
-              {output ? (
-                <div className={`p-3 rounded ${
-                  isCorrect === true ? 'bg-green-100 text-green-800' : 
-                  isCorrect === false ? 'bg-red-100 text-red-800' : 
-                  'bg-gray-100 text-gray-800'
+          {/* 输出区 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-gray-900 text-gray-200 px-4 py-3 flex items-center justify-between">
+              <span className="text-sm">输出结果</span>
+              {isCorrect !== null && (
+                <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                  isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
                 }`}>
-                  {output}
-                  {isCorrect === true && (
-                    <div className="mt-2 flex items-center">
-                      <CheckCircle size={16} className="mr-2" />
-                      太棒了！答案正确！
-                    </div>
-                  )}
-                  {isCorrect === false && (
-                    <div className="mt-2 flex items-center">
-                      <XCircle size={16} className="mr-2" />
-                      还需要改进哦！可以查看提示或答案。
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-gray-400">运行代码后将显示输出结果</div>
+                  {isCorrect ? '✓ 通过' : '✗ 未通过'}
+                </span>
+              )}
+            </div>
+            <div className="p-4 min-h-[220px] bg-gray-900 text-gray-100 border-t border-gray-800 font-mono text-sm whitespace-pre-wrap break-all leading-6">
+              {output || <span className="text-gray-500">点击右上角"运行代码"查看结果</span>}
+              {isCorrect === true && (
+                <div className="mt-3 text-green-400 flex items-center"><CheckCircle size={16} className="mr-2" /> 太棒了，答案正确！</div>
+              )}
+              {isCorrect === false && (
+                <div className="mt-3 text-red-400 flex items-center"><XCircle size={16} className="mr-2" /> 结果不符合预期，点击右侧"查看答案"或参考提示修改。</div>
               )}
             </div>
           </div>
         </div>
 
+        {/* 右侧信息栏 */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm sticky top-4">
-            <div className="p-4 border-b">
-              <h3 className="font-semibold">练习信息</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 sticky top-4">
+            <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+              <h3 className="font-semibold text-gray-900 flex items-center"><Code size={16} className="mr-2 text-blue-600" />练习信息</h3>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-1">难度</h4>
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                  currentExercise.difficulty === 'easy' ? 'bg-green-100 text-green-800' : 
-                  currentExercise.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {currentExercise.difficulty === 'easy' ? '简单' : 
-                   currentExercise.difficulty === 'medium' ? '中等' : '困难'}
-                </span>
-              </div>
-              <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-1">提示</h4>
-                <p className="text-sm text-gray-600">{currentExercise.hint}</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{currentExercise.hint}</p>
               </div>
-              
               <div className="border-t pt-4">
-                <h4 className="text-sm font-medium text-gray-500 mb-3">本项目练习</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {projectExercises.map((exercise) => (
-                    <Link
-                      key={exercise.id}
-                      to={`/practice/${courseId}/${exercise.id}`}
-                      className={`flex items-center p-2 rounded-md transition ${
-                        exercise.id === currentExercise.id ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <Code size={16} className="mr-2" />
-                      <span className="text-sm">{exercise.title}</span>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">本项目练习</h4>
+                <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
+                  {projectExercises.map((ex) => (
+                    <Link key={ex.id} to={`/practice/${courseId}/${ex.id}`}
+                          className={`flex items-center p-2 rounded-md text-sm transition ${
+                            ex.id === currentExercise.id
+                              ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200'
+                              : 'hover:bg-gray-50 text-gray-700'
+                          }`}>
+                      <Code size={14} className="mr-2 shrink-0" />
+                      <span className="truncate">{ex.title}</span>
                     </Link>
                   ))}
                 </div>
               </div>
-              
               <div className="border-t pt-4">
-                <Link
-                  to={`/courses/${courseId}`}
-                  className="flex items-center text-blue-600 hover:underline"
-                >
-                  <ChevronLeft size={16} className="mr-1" />
-                  <span>返回项目详情</span>
+                <Link to={`/courses/${courseId}`} className="flex items-center text-blue-600 hover:underline text-sm">
+                  <ChevronLeft size={16} className="mr-1" />返回项目详情
                 </Link>
               </div>
             </div>
