@@ -404,9 +404,18 @@ function execute(code) {
         return new DF(result);
       };
       const makeApply = (fn) => {
+        if (fn === 'list' || (typeof fn === 'function' && fn.name === 'list')) {
+          return Object.values(groups).map(g => g.map(r => r[selectedCol] || Object.values(r)));
+        }
         return new DF({ 'group': Object.keys(groups), 'result': Object.values(groups).map(fn) });
       };
-      return { agg: makeAgg, apply: makeApply };
+      let selectedCol = null;
+      const groupbyObj = { 
+        agg: makeAgg, 
+        apply: makeApply,
+        get: function(col) { selectedCol = col; return groupbyObj; }
+      };
+      return groupbyObj;
     };
     DF.prototype.apply = function(fn) {
       const results = [];
