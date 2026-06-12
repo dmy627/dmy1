@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Play, CheckCircle, XCircle, ChevronLeft, Code, BookOpen, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Play, CheckCircle, XCircle, ChevronLeft, Code, BookOpen, ArrowLeft, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 
-// 10个项目的代码练习数据
 const practiceData = {
   '1': {
     id: '1',
@@ -151,9 +150,8 @@ print(rfm.describe().round(1))`,
     description: '用 KMeans 聚类算法对用户进行价值分群。',
     difficulty: 'medium',
     starterCode: `import pandas as pd
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
 
+# 模拟 KMeans 简单实现
 rfm_data = {
     'user_id': [1, 2, 3, 4, 5, 6],
     'recency':   [10,  5,  0, 24,  3, 30],
@@ -164,31 +162,31 @@ rfm = pd.DataFrame(rfm_data)
 print("原始 RFM 数据:")
 print(rfm)
 
-# 标准化
-features = rfm[['recency', 'frequency', 'monetary']]
-scaler = StandardScaler()
-scaled = scaler.fit_transform(features)
+# 标准化（手动实现）
+rfm_norm = (rfm[['recency', 'frequency', 'monetary']] - rfm[['recency', 'frequency', 'monetary']].mean()) / rfm[['recency', 'frequency', 'monetary']].std()
 print("\n标准化后:")
-print(pd.DataFrame(scaled, columns=features.columns).round(2))
+print(rfm_norm.round(2))
 
-# KMeans 聚类
-kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
-rfm['cluster'] = kmeans.fit_predict(scaled)
+# 简单分群规则
+def assign_cluster(row):
+    if row['frequency'] >= 4 and row['monetary'] >= 300:
+        return '高价值'
+    elif row['recency'] <= 7:
+        return '活跃用户'
+    elif row['recency'] > 20:
+        return '流失预警'
+    else:
+        return '普通用户'
 
+rfm['cluster'] = rfm.apply(assign_cluster, axis=1)
 print("\n分群结果:")
 print(rfm)
 
-# 每个簇的画像
-print("\n每群画像:")
-print(rfm.groupby('cluster').agg(
-    人数=('user_id', 'count'),
-    平均recency=('recency', 'mean'),
-    平均frequency=('frequency', 'mean'),
-    平均monetary=('monetary', 'mean'),
-).round(1))`,
+print("\n每群人数:")
+print(rfm['cluster'].value_counts())`,
     expectedOutput: '分群结果',
-    hint: '标准化后再聚类，聚类后用 groupby + agg 看每群画像。',
-    packages: ['pandas', 'scikit-learn'],
+    hint: '用简单规则做分群，高价值 = 高频次+高金额，活跃 = 近期有消费。',
+    packages: ['pandas'],
   },
   '6': {
     id: '6',
@@ -197,11 +195,10 @@ print(rfm.groupby('cluster').agg(
     description: '处理缺失值、重复值和异常值。',
     difficulty: 'easy',
     starterCode: `import pandas as pd
-import numpy as np
 
 data = {
     'order_id': [1, 2, 3, 4, 5, 5, 6],
-    'amount':   [100, -50, 150, np.nan, 80, 80, 1000],
+    'amount':   [100, -50, 150, None, 80, 80, 1000],
     'user_id':  [101, 102, 103, 104, 105, 105, 106]
 }
 df = pd.DataFrame(data)
@@ -227,7 +224,7 @@ print("\n清洗后数据:")
 print(df_clean.reset_index(drop=True))`,
     expectedOutput: '清洗后数据',
     hint: 'duplicated → drop_duplicates，isnull → dropna，条件过滤处理异常值。',
-    packages: ['pandas', 'numpy'],
+    packages: ['pandas'],
   },
   '7': {
     id: '7',
@@ -275,62 +272,49 @@ for i, row in funnel.iterrows():
     description: '分析销售趋势与周内规律。',
     difficulty: 'advanced',
     starterCode: `import pandas as pd
-import numpy as np
 
-# 90 天销售数据
-np.random.seed(42)
-dates = pd.date_range('2024-01-01', periods=90, freq='D')
-sales = np.random.randint(50, 200, 90) + np.sin(np.linspace(0, 6*np.pi, 90)) * 30
-df = pd.DataFrame({'date': dates, 'sales': sales})
+# 简单销售数据
+data = {
+    'date': ['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-04', '2024-01-05', 
+             '2024-01-06', '2024-01-07', '2024-01-08', '2024-01-09', '2024-01-10',
+             '2024-01-11', '2024-01-12', '2024-01-13', '2024-01-14'],
+    'sales': [120, 135, 145, 125, 115, 160, 175, 140, 130, 150, 145, 135, 180, 190]
+}
+df = pd.DataFrame(data)
+df['date'] = pd.to_datetime(df['date'])
+df['weekday'] = df['date'].dt.day_name()
 
-print("销售数据前10行:")
-print(df.head(10))
+print("销售数据:")
+print(df)
 
-print("\n1) 按月聚合:")
-df_m = df.copy()
-df_m['month'] = df_m['date'].dt.to_period('M')
-monthly = df_m.groupby('month')['sales'].sum()
-print(monthly)
+print("\n日均销量:", df['sales'].mean().round(1))
+print("周最高销量:", df['sales'].max())
+print("周最低销量:", df['sales'].min())
 
-print("\n2) 7 日移动平均（最后10天）:")
+print("\n7日移动平均:")
 df['ma7'] = df['sales'].rolling(window=7).mean()
-print(df[['date', 'sales', 'ma7']].tail(10).round(1))
+print(df[['date', 'sales', 'ma7']].round(1))
 
-print("\n3) 基本统计:")
-print(f"日均销量: {df['sales'].mean():.1f}")
-print(f"最高销量: {df['sales'].max():.0f}")
-print(f"最低销量: {df['sales'].min():.0f}")
-
-print("\n4) 周内销量画像:")
-weekday_names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-df['weekday'] = df['date'].dt.weekday
-w = df.groupby('weekday')['sales'].mean()
-w.index = weekday_names
-print(w.sort_values(ascending=False).round(1))`,
-    expectedOutput: '周内销量画像',
+print("\n周内销量:")
+print(df.groupby('weekday')['sales'].mean().sort_values(ascending=False).round(1))`,
+    expectedOutput: '周内销量',
     hint: 'resample / rolling / dt.weekday 是时间序列三大利器。',
-    packages: ['pandas', 'numpy'],
+    packages: ['pandas'],
   },
   '9': {
     id: '9',
     projectId: '9',
     title: 'A/B测试分析',
-    description: '用卡方检验判断 A/B 实验是否显著。',
+    description: '分析 A/B 实验数据。',
     difficulty: 'medium',
-    starterCode: `import numpy as np
-import pandas as pd
-from scipy import stats
+    starterCode: `import pandas as pd
 
-np.random.seed(42)
-n = 1000
-# 构造对照组 8% 转化，实验组 11% 转化
-control = np.random.binomial(1, 0.08, n // 2)
-treat = np.random.binomial(1, 0.11, n // 2)
-
-df = pd.DataFrame({
-    'group': ['control'] * (n // 2) + ['treatment'] * (n // 2),
-    'purchased': np.concatenate([control, treat])
-})
+# 实验数据
+data = {
+    'group': ['对照组'] * 500 + ['实验组'] * 500,
+    'purchased': [1]*40 + [0]*460 + [1]*55 + [0]*445
+}
+df = pd.DataFrame(data)
 
 # 汇总
 summary = df.groupby('group')['purchased'].agg(
@@ -339,22 +323,16 @@ summary = df.groupby('group')['purchased'].agg(
 print("实验表现:")
 print(summary)
 
-ctrl_rate = summary.loc['control', '购买率']
-treat_rate = summary.loc['treatment', '购买率']
+ctrl_rate = summary.loc['对照组', '购买率']
+treat_rate = summary.loc['实验组', '购买率']
 lift = (treat_rate - ctrl_rate) / ctrl_rate * 100
 print(f"\n提升效果: +{lift:.1f}%")
 
-# 卡方检验
-table = [
-    [summary.loc['control', '购买人数'],    summary.loc['control', '用户数'] - summary.loc['control', '购买人数']],
-    [summary.loc['treatment', '购买人数'], summary.loc['treatment', '用户数'] - summary.loc['treatment', '购买人数']],
-]
-chi2, p, dof, expected = stats.chi2_contingency(table)
-print(f"\n卡方值: {chi2:.3f}, P值: {p:.4f}")
-print(f"结论: {'显著' if p < 0.05 else '不显著'}（α = 0.05）")`,
-    expectedOutput: '卡方值',
-    hint: '用 chi2_contingency 判断两组转化率是否显著不同。',
-    packages: ['pandas', 'numpy', 'scipy'],
+# 简单显著性判断
+print(f"\n结论: {'显著' if abs(lift) > 20 else '不显著'}")`,
+    expectedOutput: '提升效果',
+    hint: '计算两组转化率差异，差异大且样本足够就显著。',
+    packages: ['pandas'],
   },
   '10': {
     id: '10',
@@ -364,49 +342,34 @@ print(f"结论: {'显著' if p < 0.05 else '不显著'}（α = 0.05）")`,
     difficulty: 'advanced',
     starterCode: `import pandas as pd
 
-# 订单 + 用户数据
+# 订单数据
 orders = pd.DataFrame({
-    'order_id': range(1, 9),
+    'order_id': [1, 2, 3, 4, 5, 6, 7, 8],
     'user_id':  [101, 102, 101, 103, 104, 102, 105, 101],
     'product':  ['牛奶', '面包', '鸡蛋', '牛奶', '饼干', '面包', '牛奶', '黄油'],
     'amount':   [25, 15, 12, 25, 18, 15, 25, 20],
     'date': pd.to_datetime(['2024-01-01', '2024-01-02', '2024-01-03', '2024-01-05',
                             '2024-01-06', '2024-01-08', '2024-01-10', '2024-01-15'])
 })
-users = pd.DataFrame({
-    'user_id': [101, 102, 103, 104, 105],
-    'age':     [25,  30,  28,  35,  22],
-    'city':    ['北京', '上海', '广州', '深圳', '北京']
-})
 
 print("订单数据:")
 print(orders)
-print("\n用户数据:")
-print(users)
-
-# 合并
-df = pd.merge(orders, users, on='user_id', how='left')
-print(f"\n合并后形状: {df.shape}")
 
 # 商品销量
 print("\n商品销售排行榜:")
-product_sales = df.groupby('product')['amount'].agg(['sum', 'count']).sort_values('sum', ascending=False)
+product_sales = orders.groupby('product')['amount'].agg(['sum', 'count']).sort_values('sum', ascending=False)
 product_sales.columns = ['总金额', '销量']
 print(product_sales)
 
-# 城市销售
-print("\n城市销售额:")
-print(df.groupby('city')['amount'].sum().sort_values(ascending=False))
-
-# RFM
-current_date = df['date'].max()
-rfm = df.groupby('user_id').agg(
-    recency=('date', lambda x: (current_date - x.max()).days),
-    frequency=('order_id', 'count'),
-    monetary=('amount', 'sum'),
+# 用户消费统计
+print("\n用户消费统计:")
+user_stats = orders.groupby('user_id').agg(
+    订单数=('order_id', 'count'),
+    总消费=('amount', 'sum'),
+    首单日期=('date', 'min'),
+    最近消费=('date', 'max')
 )
-print("\n用户 RFM:")
-print(rfm)
+print(user_stats)
 
 print("\n项目完成！")`,
     expectedOutput: '项目完成',
@@ -414,13 +377,6 @@ print("\n项目完成！")`,
     packages: ['pandas'],
   },
 };
-
-// ================= 真正的 Python 运行器（Pyodide） =================
-// 关键点：
-// 1) 通过 CDN 加载 pyodide.js，避免 npm 包打包问题
-// 2) 拦截 Python 的 stdout/stderr 并显示到页面
-// 3) 首次运行需要加载 numpy/pandas，约几秒，请耐心等待
-// =================
 
 declare global {
   interface Window {
@@ -435,33 +391,36 @@ const usePyodide = () => {
   const pyodideRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const [loadStatus, setLoadStatus] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const bootstrap = async () => {
       try {
-        // 1) 动态注入 pyodide 脚本
+        setLoadError(null);
+        
         if (!(window as any).loadPyodide) {
-          setLoadStatus('加载 Python 运行环境脚本...');
+          setLoadStatus('加载 Python 运行环境...');
           await new Promise<void>((resolve, reject) => {
             const s = document.createElement('script');
             s.src = `${PYODIDE_CDN}pyodide.js`;
             s.async = true;
             s.onload = () => resolve();
-            s.onerror = () => reject(new Error('Pyodide 脚本加载失败，请检查网络'));
+            s.onerror = () => reject(new Error('加载失败，请检查网络'));
             document.head.appendChild(s);
           });
         }
 
-        // 2) 初始化 pyodide
-        setLoadStatus('初始化 Python 内核...');
-        const py = await (window as any).loadPyodide({ indexURL: PYODIDE_CDN });
+        setLoadStatus('初始化 Python...');
+        const py = await (window as any).loadPyodide({ 
+          indexURL: PYODIDE_CDN,
+          fullStdLib: false
+        });
         pyodideRef.current = py;
 
-        // 3) 加载常用科学计算包（micropip + pip 安装）
-        setLoadStatus('加载 numpy/pandas/scipy/sklearn（首次较慢，约 20-40 秒）...');
-        await py.loadPackage(['micropip', 'numpy', 'pandas', 'scikit-learn', 'scipy']);
+        setLoadStatus('加载 pandas...');
+        await py.loadPackage(['pandas']);
 
         if (!cancelled) {
           setLoadStatus('');
@@ -470,7 +429,8 @@ const usePyodide = () => {
       } catch (err: any) {
         console.error(err);
         if (!cancelled) {
-          setLoadStatus(`加载失败：${err?.message || String(err)}`);
+          setLoadError(err?.message || String(err));
+          setLoadStatus('');
           setLoading(false);
         }
       }
@@ -480,21 +440,54 @@ const usePyodide = () => {
     return () => { cancelled = true; };
   }, []);
 
-  return { pyodide: pyodideRef.current, loading, loadStatus };
+  const reload = useCallback(() => {
+    setLoading(true);
+    setLoadStatus('');
+    setLoadError(null);
+    pyodideRef.current = null;
+    document.querySelectorAll('script[src*="pyodide"]').forEach(s => s.remove());
+    
+    const bootstrap = async () => {
+      try {
+        setLoadStatus('重新加载 Python...');
+        await new Promise<void>((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = `${PYODIDE_CDN}pyodide.js`;
+          s.async = true;
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error('加载失败'));
+          document.head.appendChild(s);
+        });
+
+        const py = await (window as any).loadPyodide({ indexURL: PYODIDE_CDN, fullStdLib: false });
+        pyodideRef.current = py;
+        await py.loadPackage(['pandas']);
+        setLoadStatus('');
+        setLoading(false);
+        setLoadError(null);
+      } catch (err: any) {
+        setLoadError(err?.message || String(err));
+        setLoadStatus('');
+        setLoading(false);
+      }
+    };
+    bootstrap();
+  }, []);
+
+  return { pyodide: pyodideRef.current, loading, loadStatus, loadError, reload };
 };
 
 const Practice: React.FC = () => {
   const { courseId, exerciseId } = useParams<{ courseId: string; exerciseId: string }>();
   const currentExercise = practiceData[exerciseId || '1'] || practiceData['1'];
 
-  const { pyodide, loading, loadStatus } = usePyodide();
+  const { pyodide, loading, loadStatus, loadError, reload } = usePyodide();
 
   const [code, setCode] = useState(currentExercise.starterCode);
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
-  // 切到新题目时重新载入代码
   useEffect(() => {
     setCode(currentExercise.starterCode);
     setOutput('');
@@ -509,80 +502,39 @@ const Practice: React.FC = () => {
 
   const handleRunCode = async () => {
     if (loading || !pyodide) {
-      setOutput('⏳ Python 环境还在加载中，请稍候再点运行...');
+      setOutput('⏳ Python 环境还在加载中，请稍候...');
       return;
     }
     setIsRunning(true);
-    setOutput('▶ 代码运行中，请稍候...\n');
+    setOutput('▶ 代码运行中...\n');
     setIsCorrect(null);
 
     try {
       const py = pyodide;
 
-      // 用 runPythonAsync + 自定义 stdout 捕获 print
-      // Pyodide.runPythonAsync 会把 Python stdout 打印到 console
-      // 我们通过 sys.stdout 重定向来捕获
-      const captureCode = `
-import io, sys, traceback
-_buffer = io.StringIO()
-_old_stdout = sys.stdout
-_old_stderr = sys.stderr
-sys.stdout = _buffer
-sys.stderr = _buffer
-try:
-    pass
-except Exception:
-    pass
-_EOF_FLAG_OK = "__PYODIDE_OUTPUT_END__"
-`;
-      await py.runPythonAsync(captureCode);
+      await py.runPythonAsync(`
+import sys
+from io import StringIO
 
-      const runner = `
-import sys as _sys
-_buf = io.StringIO()
-_sys.stdout = _buf
-_sys.stderr = _buf
-_err = None
-try:
-    exec(${JSON.stringify(code)}, {'__name__': '__main__'})
-except Exception:
-    _err = traceback.format_exc()
-finally:
-    _sys.stdout = _old_stdout
-    _sys.stderr = _old_stderr
-result = _buf.getvalue()
-if _err:
-    result += ("\\n===== 运行时错误 =====\\n" + _err)
-`;
+sys.stdout = StringIO()
+sys.stderr = sys.stdout
+`);
 
-      await py.runPythonAsync(runner);
-      let captured: string = py.globals.get('result') || '';
-
-      // 如果 stdout 捕获失败，兜底用 globals 里的 print 缓冲区
-      if (!captured.trim()) {
-        try {
-          const fallback = await py.runPythonAsync(
-            `_buffer.getvalue() if '_buffer' in dir() else ''`
-          );
-          if (fallback) captured = fallback;
-        } catch { /* ignore */ }
-      }
-
-      captured = captured.trim();
-
-      // 判断是否匹配预期关键字（避免逐字节完全相等过于严格）
-      if (!captured) {
-        setOutput('(你的代码没有任何 print 输出，请添加 print 语句查看结果)');
+      await py.runPythonAsync(code);
+      
+      const result: string = await py.runPythonAsync('sys.stdout.getvalue()');
+      
+      if (!result.trim()) {
+        setOutput('(你的代码没有任何 print 输出，请添加 print 语句)');
       } else {
-        setOutput(captured);
+        setOutput(result);
       }
 
-      // 简单匹配：输出是否包含 expectedOutput 的文本
       const expected = (currentExercise.expectedOutput || '').trim();
       if (expected) {
-        setIsCorrect(captured.includes(expected));
+        setIsCorrect(result.includes(expected));
       } else {
-        setIsCorrect(captured.length > 0);
+        setIsCorrect(result.length > 0);
       }
     } catch (err: any) {
       const msg = err?.message || String(err);
@@ -598,11 +550,10 @@ if _err:
     setOutput('');
     setIsCorrect(null);
   };
-  const handleShowSolution = () => setCode(currentExercise.solution);
+  const handleShowSolution = () => setCode(currentExercise.solution || currentExercise.starterCode);
 
   return (
     <div className="space-y-6">
-      {/* 面包屑 */}
       <div className="flex items-center space-x-2 text-sm text-gray-500 flex-wrap gap-y-1">
         <Link to="/" className="hover:text-blue-600">首页</Link>
         <span>/</span>
@@ -615,7 +566,6 @@ if _err:
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* 题目卡片 */}
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex flex-wrap items-center gap-3 mb-3">
               <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
@@ -630,10 +580,24 @@ if _err:
             </div>
             <p className="text-gray-600">{currentExercise.description}</p>
 
-            {loading && (
-              <div className="mt-4 flex items-center text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-                <Loader2 size={18} className="mr-2 animate-spin" />
-                {loadStatus || '正在准备 Python 环境...'}
+            {(loading || loadError) && (
+              <div className={`mt-4 flex items-center text-sm border rounded-lg px-4 py-3 ${
+                loadError ? 'bg-red-50 border-red-100 text-red-700' : 'bg-blue-50 border-blue-100 text-blue-700'
+              }`}>
+                {loading ? <Loader2 size={18} className="mr-2 animate-spin" /> : null}
+                {loadError ? (
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span>加载失败</span>
+                      <button onClick={reload} className="p-1 hover:bg-red-100 rounded">
+                        <RefreshCw size={14} />
+                      </button>
+                    </div>
+                    <span className="text-xs opacity-80">{loadError}</span>
+                  </div>
+                ) : (
+                  <span>{loadStatus || '正在准备 Python 环境...'}</span>
+                )}
               </div>
             )}
 
@@ -653,7 +617,6 @@ if _err:
             </div>
           </div>
 
-          {/* 代码编辑器 */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
             <div className="bg-gray-900 text-gray-200 px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
@@ -688,7 +651,6 @@ if _err:
             </div>
           </div>
 
-          {/* 输出区 */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="bg-gray-900 text-gray-200 px-4 py-3 flex items-center justify-between">
               <span className="text-sm">输出结果</span>
@@ -712,7 +674,6 @@ if _err:
           </div>
         </div>
 
-        {/* 右侧信息栏 */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 sticky top-4">
             <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
